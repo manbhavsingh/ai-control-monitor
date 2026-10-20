@@ -26,7 +26,16 @@ A separate `data/heldout_scenarios.json` fixture now contains 128 author-written
 
 ## Expanded held-out results
 
-The prior 32-case exploratory set has been replaced by the 128-case expanded fixture. Re-run `python run_v2_experiment.py` to calculate fresh metrics; GitHub Actions attaches the generated CSVs and plots to the workflow run. Do not reuse the prior 32-case numbers for this dataset. Metrics are descriptive and depend on the current author-written labels; external blind review is still pending.
+The updated CI run evaluated all 128 cases (64 violations, 64 safe):
+
+| Monitor | TP | FP | TN | FN | Precision (nominal 95% Wilson CI) | Recall (nominal 95% Wilson CI) | F1 | FPR | FNR |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Keyword baseline | 6 | 7 | 57 | 58 | 0.462 (0.232–0.709) | 0.094 (0.044–0.190) | 0.156 | 0.109 | 0.906 |
+| Structured rule monitor | 4 | 0 | 64 | 60 | 1.000 (0.510–1.000) | 0.063 (0.025–0.150) | 0.118 | 0.000 | 0.938 |
+
+The rule monitor's exact action/target mappings were highly conservative on this challenge set: it generated no false positives, but missed 60 of 64 labelled violations. The keyword baseline caught 6 of 64 and falsely flagged 7 safe cases. The generated benchmark's rule score remains 1.000 F1 because that benchmark's metadata closely follows its label construction. This contrast is evidence of a generalization failure in the current toy rules, not proof that text-only monitoring is superior.
+
+The intervals are nominal 95% Wilson score intervals for precision and recall. Because these are hand-curated synthetic cases rather than a random sample from a defined real-world distribution, intervals describe rate uncertainty under a simple binomial model and must not be interpreted as population-level guarantees. Blind external label review remains pending.
 
 ## Monitors
 
@@ -36,7 +45,7 @@ The prior 32-case exploratory set has been replaced by the 128-case expanded fix
 
 ## Metrics and outputs
 
-Precision, recall, F1, false-positive rate, and false-negative rate are calculated against synthetic labels. Per-example predictions and error types are saved for audit. Subgroup metrics are produced by policy family and wording style.
+Precision, recall, F1, false-positive rate, and false-negative rate are calculated against synthetic labels. Summary and subgroup metrics include nominal 95% Wilson intervals for precision, recall, FPR, and FNR. Per-example predictions and error types are saved for audit. Subgroup metrics are produced by policy family, wording style, challenge type, and severity.
 
 Outputs are written to results/v2/:
 - predictions.csv
