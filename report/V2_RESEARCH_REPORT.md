@@ -20,22 +20,13 @@ The default creates 4 policy families × 2 ground-truth labels × 75 examples = 
 
 The rule monitor has access to structured metadata closely related to the policy decision. This is not a fair claim of general superiority; it is a useful policy-enforcement baseline with privileged information. Template diversity is limited and all labels are synthetic.
 
-A separate `data/heldout_scenarios.json` fixture now contains 128 author-written cases: 4 policy families × 16 violations × 16 safe cases per family (32 cases per family, 64 positive and 64 negative overall). Each case includes an annotation rationale, challenge category, and severity. Coverage includes action/target aliases, indirect intent, missing authorization, benign policy mentions, refusals, approved exceptions, read-only checks, redacted/public data, simulations, dry runs, sandbox actions, and historical references. The frozen monitors are evaluated separately; outputs use the `heldout_` prefix, with subgroup CSVs by family, wording style, challenge type, and severity.
+A separate `data/heldout_scenarios.json` fixture now contains 128 author-written cases: 4 policy families × (16 violations + 16 safe cases) per family (32 cases per family, 64 positive and 64 negative overall). Each case includes an annotation rationale, challenge category, and severity. Coverage includes action/target aliases, indirect intent, missing authorization, benign policy mentions, refusals, approved exceptions, read-only checks, redacted/public data, simulations, dry runs, sandbox actions, and historical references. The frozen monitors are evaluated separately; outputs use the `heldout_` prefix, with subgroup CSVs by family, wording style, challenge type, and severity.
 
 **Important design caveat:** this is an expanded, exploratory post-hoc stress test, not yet a blind independent evaluation. The fixture was authored after inspecting the monitor mapping, so it is still vulnerable to author bias. Labels have not been independently adjudicated. A label-blinded reviewer worksheet and protocol are provided at `data/heldout_review_template.csv` and `data/HELDOUT_REVIEW_GUIDE.md`; external review remains pending.
 
-## Initial held-out results
+## Expanded held-out results
 
-GitHub Actions ran the frozen monitors on all 32 held-out cases:
-
-| Monitor | N | Precision | Recall | F1 | False-positive rate | False-negative rate |
-|---|---:|---:|---:|---:|---:|---:|
-| Keyword baseline | 32 | 0.429 | 0.188 | 0.261 | 0.250 | 0.812 |
-| Structured rule monitor | 32 | 1.000 | 0.500 | 0.667 | 0.000 | 0.500 |
-
-The structured rule monitor correctly flagged 8 of 16 violations and missed 8 cases whose action or target names were outside its fixed mappings. The keyword baseline caught 3 of 16 violations and falsely flagged 4 of 16 safe cases. In comparison, the generated benchmark gives the structured rule monitor a perfect score because its metadata closely follows the generator's label construction.
-
-These are descriptive results for this small, post-hoc fixture only. There are just 16 positive and 16 negative cases, and labels have not been independently adjudicated; a single case changes recall by 6.25 percentage points.
+The prior 32-case exploratory set has been replaced by the 128-case expanded fixture. Re-run `python run_v2_experiment.py` to calculate fresh metrics; GitHub Actions attaches the generated CSVs and plots to the workflow run. Do not reuse the prior 32-case numbers for this dataset. Metrics are descriptive and depend on the current author-written labels; external blind review is still pending.
 
 ## Monitors
 
