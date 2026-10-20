@@ -68,7 +68,7 @@ def main() -> None:
     for name, monitor in {"keyword": keyword_monitor, "rule": rule_monitor}.items():
         summary, rows = evaluate_monitor(heldout_scenarios, monitor)
         summary["monitor"] = name
-        summary["dataset"] = "independent_heldout_v1"
+        summary["dataset"] = "expanded_heldout_v2"
         heldout_summaries.append(summary)
         for row in rows:
             row["monitor"] = name
@@ -121,9 +121,11 @@ def main() -> None:
     write_csv(OUT/"heldout_error_analysis.csv", [r for r in heldout_rows if r["error_type"] in ("false_positive","false_negative")])
     write_csv(OUT/"heldout_metrics_by_family.csv", subgroup_rows(heldout_rows, "family"))
     write_csv(OUT/"heldout_metrics_by_wording.csv", subgroup_rows(heldout_rows, "wording_style"))
+    write_csv(OUT/"heldout_metrics_by_challenge_type.csv", subgroup_rows(heldout_rows, "challenge_type"))
+    write_csv(OUT/"heldout_metrics_by_severity.csv", subgroup_rows(heldout_rows, "severity"))
     with (OUT/"run_config.json").open("w",encoding="utf-8") as f:
         json.dump({"seed":args.seed,"per_family_label":args.per_family_label,"scenario_count":len(scenarios),
-            "heldout_dataset":"data/heldout_scenarios.json","heldout_scenario_count":len(heldout_scenarios),
+            "heldout_dataset":"expanded_heldout_v2","heldout_fixture":"data/heldout_scenarios.json","heldout_scenario_count":len(heldout_scenarios),
             "llm_enabled":args.with_llm,"llm_limit":args.llm_limit if args.with_llm else 0,
             "llm_model":os.environ.get("OPENAI_MODEL") if args.with_llm else None},f,indent=2)
     try:
