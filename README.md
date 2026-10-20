@@ -44,7 +44,7 @@ ai-control-monitor/
 ├── tests/
 │   └── test_monitor.py
 └── results/
-    └── .gitkeep
+    └── experiment_results.csv
 ```
 
 ## Experimental design
