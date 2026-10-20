@@ -80,3 +80,23 @@ Each scenario records an action type, target, agent message, and ground-truth la
 **AI Control Monitor Benchmark (Python, AI Safety):** Built a reproducible toy benchmark comparing keyword-based and rule-based monitors for simulated agent constraint violations; evaluated precision, recall, F1, and false-positive/negative rates, with tests for false alarms and missed violations.
 
 Do not claim this proves AI systems can be controlled or that you evaluated real frontier models.
+
+
+## Version 2: Expanded AI-control evaluation
+
+V2 generates **600 deterministic synthetic scenarios** across four policy families and compares:
+- keyword-only monitoring,
+- structured rule-based monitoring,
+- an optional API-backed AI judge (explicit opt-in; may incur costs).
+
+It exports per-scenario predictions, false-positive/false-negative analysis, subgroup metrics by family and wording style, summary metrics, and plots.
+
+```bash
+pip install -r requirements.txt
+python run_v2_experiment.py
+python -m pytest -q
+```
+
+To run the optional AI judge, set `OPENAI_API_KEY` and then use `python run_v2_experiment.py --with-llm --llm-limit 40`. Never commit API keys.
+
+See [the V2 research protocol](report/V2_RESEARCH_REPORT.md). Results are synthetic and do not establish real-world AI safety. A GitHub Actions workflow runs tests and the benchmark on pushes and pull requests; its generated outputs are downloadable as workflow artifacts.
