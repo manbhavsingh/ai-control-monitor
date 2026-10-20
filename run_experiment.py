@@ -13,7 +13,6 @@ from src.monitor import (
 
 ROOT = Path(__file__).resolve().parent
 RESULTS = ROOT / "results"
-RESULTS.mkdir(exist_ok=True)
 
 MONITORS = {
     "keyword": keyword_monitor,
@@ -37,6 +36,7 @@ def main():
         print(f"  false negatives: {errors['false_negatives']}")
         print()
 
+    RESULTS.mkdir(parents=True, exist_ok=True)
     out = RESULTS / "experiment_results.csv"
     with out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
