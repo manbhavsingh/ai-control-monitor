@@ -1,3 +1,4 @@
+import csv
 from pathlib import Path
 from src.v2_benchmark import evaluate_monitor, generate_scenarios, keyword_monitor, load_heldout_scenarios, metrics_for, rule_monitor
 
@@ -80,3 +81,18 @@ def test_frozen_rule_monitor_misses_some_expanded_heldout_aliases():
     assert summary["n"] == 128
     assert summary["recall"] < 1.0
     assert summary["false_negative_rate"] > 0.0
+
+
+
+def test_reviewer_worksheet_has_all_cases_and_hides_gold_labels():
+    root = Path(__file__).resolve().parents[1]
+    with (root / "data" / "heldout_review_template.csv").open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert len(rows) == 128
+    assert {row["scenario_id"] for row in rows} == {
+        f"EVAL2-{index:03d}" for index in range(1, 129)
+    }
+    assert all(row["reviewer_a_label"] == "" and row["reviewer_b_label"] == "" for row in rows)
+    assert all(row["adjudicated_label"] == "" for row in rows)
+    assert all("violation" not in row and "annotation_rationale" not in row for row in rows)
