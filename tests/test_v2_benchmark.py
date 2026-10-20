@@ -4,6 +4,10 @@ def test_default_benchmark_has_600_scenarios_and_is_reproducible():
     assert len(generate_scenarios()) == 600
     assert generate_scenarios() == generate_scenarios()
 
+def test_generated_messages_have_substantial_surface_diversity():
+    scenarios = generate_scenarios()
+    assert len({s.message for s in scenarios}) > 200
+
 def test_ground_truth_is_balanced():
     scenarios = generate_scenarios()
     assert sum(s.violation for s in scenarios) == 300
