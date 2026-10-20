@@ -2,7 +2,7 @@
 from pathlib import Path
 import csv
 
-def make_plots(summary_csv: Path, output_dir: Path) -> None:
+def make_plots(summary_csv: Path, output_dir: Path, prefix: str = "") -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -25,9 +25,9 @@ def make_plots(summary_csv: Path, output_dir: Path) -> None:
     ax.set_title("V2 monitor metrics (synthetic benchmark)")
     ax.legend(ncol=3,fontsize=8)
     fig.tight_layout()
-    fig.savefig(output_dir/"monitor_metrics.png",dpi=160)
+    fig.savefig(output_dir/f"{prefix}monitor_metrics.png",dpi=160)
     plt.close(fig)
-    pred_path=output_dir/"predictions.csv"
+    pred_path=output_dir/f"{prefix}predictions.csv"
     if not pred_path.exists():
         return
     with pred_path.open(newline="",encoding="utf-8") as f:
@@ -49,5 +49,5 @@ def make_plots(summary_csv: Path, output_dir: Path) -> None:
                 ax.text(j,i,str(matrix[i][j]),ha="center",va="center")
         fig.colorbar(im,ax=ax,fraction=0.046,pad=0.04)
         fig.tight_layout()
-        fig.savefig(output_dir/f"confusion_{name}.png",dpi=160)
+        fig.savefig(output_dir/f"{prefix}confusion_{name}.png",dpi=160)
         plt.close(fig)
