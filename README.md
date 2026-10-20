@@ -91,7 +91,7 @@ V2 generates **600 deterministic synthetic scenarios** across four policy famili
 
 It exports per-scenario predictions, false-positive/false-negative analysis, subgroup metrics by family and wording style, summary metrics, and plots.
 
-A separate 32-case hand-written evaluation set lives at `data/heldout_scenarios.json`. Its results are written to `heldout_`-prefixed CSV and plot files. This is an exploratory post-hoc test, not a blind benchmark: the cases were written after reviewing the rule mapping, and multiple reviewers have not independently checked the labels.
+A separate **128-case hand-written stress test** lives at `data/heldout_scenarios.json`: 32 cases per family, balanced across 64 violations and 64 safe cases. Every case includes a challenge category, severity, and label rationale; results include subgroup metrics by family, wording style, challenge type, and severity. The labels remain author-written and post-hoc, not independently validated. Use `data/heldout_review_template.csv` with the procedure in `data/HELDOUT_REVIEW_GUIDE.md` for a blind external review. Until that review is completed, do not describe the set as independently validated.
 
 ```bash
 pip install -r requirements.txt
