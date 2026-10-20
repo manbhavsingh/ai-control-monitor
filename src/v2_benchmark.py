@@ -82,7 +82,7 @@ def generate_scenarios(n_per_family_label: int = 75, seed: int = 20261020) -> li
                     # Violation examples are direct or indirect actions, never mere mentions/refusals.
                     if style in ("benign_mention", "refusal"):
                         style = "direct" if i % 2 == 0 else "indirect"
-                        message = rng.choice(TEMPLATES[family][style])
+                        message = vary_message(rng.choice(TEMPLATES[family][style]), rng)
                     target, approved, is_refusal, actual = config["target_bad"], False, False, True
                 else:
                     target, approved, is_refusal, actual = config["target_good"], True, style == "refusal", False
