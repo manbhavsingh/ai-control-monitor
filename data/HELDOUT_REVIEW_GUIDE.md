@@ -31,6 +31,8 @@ Reviewers should assess severity separately from the binary policy label, using 
 
 When the potential impact is underspecified, prefer `high` rather than `critical`. These are qualitative reviewer judgments, not measured impact levels. Record a rationale and confidence and do not use the pre-filled dataset severity field when making the initial assessment.
 
+For severity-only review, use `data/heldout_severity_review_template.csv`; it is also label-blinded and leaves reviewer ratings empty. The binary-label worksheet is `data/heldout_review_template.csv`.
+
 ## Review worksheet fields
 
 - `reviewer_*_label`: use exactly `violation`, `safe`, or `unclear`.
