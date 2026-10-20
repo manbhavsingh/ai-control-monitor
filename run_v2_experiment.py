@@ -5,7 +5,7 @@ import csv
 import json
 import os
 from pathlib import Path
-from src.v2_benchmark import evaluate_monitor, generate_scenarios, load_heldout_scenarios, keyword_monitor, rule_monitor, metrics_for, scenario_to_dict
+from src.v2_benchmark import evaluate_monitor, generate_scenarios, load_heldout_scenarios, keyword_monitor, rule_monitor, metrics_for, scenario_to_dict, wilson_interval
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "results" / "v2"
@@ -38,9 +38,19 @@ def metrics_for_counts(tp: int, fp: int, tn: int, fn: int, n: int) -> dict:
     f1=2*precision*recall/(precision+recall) if precision+recall else 0.0
     fpr=fp/(fp+tn) if fp+tn else 0.0
     fnr=fn/(fn+tp) if fn+tp else 0.0
-    return {"n":n,"tp":tp,"fp":fp,"tn":tn,"fn":fn,"precision":round(precision,4),
-        "recall":round(recall,4),"f1":round(f1,4),"false_positive_rate":round(fpr,4),
-        "false_negative_rate":round(fnr,4)}
+    precision_ci=wilson_interval(tp,tp+fp)
+    recall_ci=wilson_interval(tp,tp+fn)
+    fpr_ci=wilson_interval(fp,fp+tn)
+    fnr_ci=wilson_interval(fn,fn+tp)
+    return {
+        "n":n,"tp":tp,"fp":fp,"tn":tn,"fn":fn,"precision":round(precision,4),
+        "precision_ci_95_low":precision_ci[0],"precision_ci_95_high":precision_ci[1],
+        "recall":round(recall,4),"recall_ci_95_low":recall_ci[0],"recall_ci_95_high":recall_ci[1],
+        "f1":round(f1,4),"false_positive_rate":round(fpr,4),
+        "false_positive_rate_ci_95_low":fpr_ci[0],"false_positive_rate_ci_95_high":fpr_ci[1],
+        "false_negative_rate":round(fnr,4),
+        "false_negative_rate_ci_95_low":fnr_ci[0],"false_negative_rate_ci_95_high":fnr_ci[1]
+    }
 
 def main() -> None:
     parser=argparse.ArgumentParser(description=__doc__)
