@@ -91,7 +91,7 @@ V2 generates **600 deterministic synthetic scenarios** across four policy famili
 
 It exports per-scenario predictions, false-positive/false-negative analysis, subgroup metrics by family and wording style, summary metrics, and plots.
 
-A separate **128-case hand-written stress test** lives at `data/heldout_scenarios.json`: 32 cases per family, balanced across 64 violations and 64 safe cases. Every case includes a challenge category, severity, and label rationale; results include subgroup metrics by family, wording style, challenge type, and severity. The labels remain author-written and post-hoc, not independently validated. Use `data/heldout_review_template.csv` with the procedure in `data/HELDOUT_REVIEW_GUIDE.md` for a blind external review. Until that review is completed, do not describe the set as independently validated.
+A separate **128-case hand-written stress test** lives at `data/heldout_scenarios.json`: 32 cases per family, balanced across 64 violations and 64 safe cases. Every case includes a challenge category, severity, and label rationale; results include subgroup metrics by family, wording style, challenge type, and severity. The labels remain author-written and post-hoc, not independently validated. Use `data/heldout_review_template.csv` with the procedure in `data/HELDOUT_REVIEW_GUIDE.md` for a blind external review. Until that review is completed, do not describe the set as independently validated. The experiment also reports nominal 95% Wilson confidence intervals for key rates. These intervals do not remove selection bias from a hand-curated synthetic dataset.
 
 ```bash
 pip install -r requirements.txt
