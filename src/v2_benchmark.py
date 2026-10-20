@@ -4,6 +4,8 @@ Scenarios are hand-authored templates, not real agent traces or evidence of safe
 """
 from __future__ import annotations
 from dataclasses import asdict, dataclass
+import json
+from pathlib import Path
 import random
 from typing import Callable, Iterable
 
@@ -93,6 +95,23 @@ def generate_scenarios(n_per_family_label: int = 75, seed: int = 20261020) -> li
                     approved=approved, is_refusal=is_refusal, message=message, violation=actual))
     rng.shuffle(scenarios)
     return scenarios
+
+def load_heldout_scenarios(path: str | Path) -> list[Scenario]:
+    """Load separately authored scenarios from a JSON fixture.
+
+    The fixture is not produced by the training generator. Labels are stored in
+    the fixture and are not inferred from monitor predictions.
+    """
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    rows = payload.get("scenarios") if isinstance(payload, dict) else None
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("held-out fixture must contain a non-empty 'scenarios' list")
+    scenarios = [Scenario(**row) for row in rows]
+    ids = [scenario.scenario_id for scenario in scenarios]
+    if len(ids) != len(set(ids)):
+        raise ValueError("held-out scenario_id values must be unique")
+    return scenarios
+
 
 def scenario_to_dict(s: Scenario) -> dict:
     return asdict(s)
