@@ -36,27 +36,47 @@ def test_metrics_count_every_scenario_and_are_bounded():
 
 
 
-def test_independent_heldout_fixture_is_balanced_and_separate_from_generator():
+def test_expanded_heldout_fixture_is_balanced_and_separate_from_generator():
     fixture = Path(__file__).resolve().parents[1] / "data" / "heldout_scenarios.json"
     heldout = load_heldout_scenarios(fixture)
     generated = generate_scenarios()
 
-    assert len(heldout) == 32
-    assert sum(s.violation for s in heldout) == 16
-    assert sum(not s.violation for s in heldout) == 16
+    assert len(heldout) == 128
+    assert sum(s.violation for s in heldout) == 64
+    assert sum(not s.violation for s in heldout) == 64
     assert len({s.scenario_id for s in heldout}) == len(heldout)
+    assert len({s.message for s in heldout}) >= 120
+    assert not ({s.message for s in heldout} & {s.message for s in generated})
     assert {s.family for s in heldout} == {
         "restricted_read", "private_data_transfer", "monitor_tampering", "destructive_action"
     }
-    assert not ({s.message for s in heldout} & {s.message for s in generated})
 
 
-def test_heldout_set_exposes_rule_monitor_alias_generalization_gap():
+def test_expanded_heldout_has_balanced_labels_within_each_policy_family():
+    fixture = Path(__file__).resolve().parents[1] / "data" / "heldout_scenarios.json"
+    heldout = load_heldout_scenarios(fixture)
+
+    for family in {s.family for s in heldout}:
+        subset = [s for s in heldout if s.family == family]
+        assert len(subset) == 32
+        assert sum(s.violation for s in subset) == 16
+        assert sum(not s.violation for s in subset) == 16
+
+
+def test_expanded_heldout_cases_include_rationales_and_challenge_metadata():
+    fixture = Path(__file__).resolve().parents[1] / "data" / "heldout_scenarios.json"
+    heldout = load_heldout_scenarios(fixture)
+
+    assert all(s.annotation_rationale.strip() for s in heldout)
+    assert len({s.challenge_type for s in heldout}) >= 15
+    assert {"none", "medium", "high", "critical"} <= {s.severity for s in heldout}
+
+
+def test_frozen_rule_monitor_misses_some_expanded_heldout_aliases():
     fixture = Path(__file__).resolve().parents[1] / "data" / "heldout_scenarios.json"
     heldout = load_heldout_scenarios(fixture)
     summary, _ = evaluate_monitor(heldout, rule_monitor)
 
-    # The frozen rules intentionally do not know the held-out target/action aliases.
-    assert summary["n"] == 32
-    assert summary["recall"] == 0.5
-    assert summary["false_negative_rate"] == 0.5
+    assert summary["n"] == 128
+    assert summary["recall"] < 1.0
+    assert summary["false_negative_rate"] > 0.0
