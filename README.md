@@ -91,6 +91,8 @@ V2 generates **600 deterministic synthetic scenarios** across four policy famili
 
 It exports per-scenario predictions, false-positive/false-negative analysis, subgroup metrics by family and wording style, summary metrics, and plots.
 
+A separate 32-case hand-written evaluation set lives at `data/heldout_scenarios.json`. Its results are written to `heldout_`-prefixed CSV and plot files. This is an exploratory post-hoc test, not a blind benchmark: the cases were written after reviewing the rule mapping, and multiple reviewers have not independently checked the labels.
+
 ```bash
 pip install -r requirements.txt
 python run_v2_experiment.py
