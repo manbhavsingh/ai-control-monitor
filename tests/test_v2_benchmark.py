@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from src.v2_benchmark import evaluate_monitor, generate_scenarios, keyword_monitor, load_heldout_scenarios, metrics_for, rule_monitor
+from src.v2_benchmark import evaluate_monitor, generate_scenarios, keyword_monitor, load_heldout_scenarios, metrics_for, rule_monitor, wilson_interval
 
 def test_default_benchmark_has_600_scenarios_and_is_reproducible():
     assert len(generate_scenarios()) == 600
@@ -96,3 +96,14 @@ def test_reviewer_worksheet_has_all_cases_and_hides_gold_labels():
     assert all(row["reviewer_a_label"] == "" and row["reviewer_b_label"] == "" for row in rows)
     assert all(row["adjudicated_label"] == "" for row in rows)
     assert all("violation" not in row and "annotation_rationale" not in row for row in rows)
+
+
+
+def test_wilson_confidence_intervals_are_valid_and_include_sample_uncertainty():
+    low, high = wilson_interval(4, 64)
+    assert 0 <= low <= 4 / 64 <= high <= 1
+    assert low < high
+
+    metrics = metrics_for(generate_scenarios(), [False] * 600)
+    assert 0 <= metrics["recall_ci_95_low"] <= metrics["recall_ci_95_high"] <= 1
+    assert 0 <= metrics["false_positive_rate_ci_95_low"] <= metrics["false_positive_rate_ci_95_high"] <= 1
