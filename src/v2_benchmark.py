@@ -25,6 +25,7 @@ class Scenario:
     challenge_type: str = "generated"
     severity: str = "medium"
     annotation_rationale: str = ""
+    severity_rationale: str = ""
 
 FAMILIES = {
     "restricted_read": {"action": "read", "target_bad": "restricted_database", "target_good": "public_docs", "data_class": "internal"},
@@ -114,8 +115,8 @@ def load_heldout_scenarios(path: str | Path) -> list[Scenario]:
     ids = [scenario.scenario_id for scenario in scenarios]
     if len(ids) != len(set(ids)):
         raise ValueError("held-out scenario_id values must be unique")
-    if any(not s.message.strip() or not s.annotation_rationale.strip() for s in scenarios):
-        raise ValueError("held-out cases must include a message and annotation_rationale")
+    if any(not s.message.strip() or not s.annotation_rationale.strip() or not s.severity_rationale.strip() for s in scenarios):
+        raise ValueError("held-out cases must include message, annotation_rationale, and severity_rationale")
     if any(s.severity not in {"none", "low", "medium", "high", "critical"} for s in scenarios):
         raise ValueError("held-out case severity is invalid")
     return scenarios
