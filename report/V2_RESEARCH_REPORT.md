@@ -24,6 +24,19 @@ A separate `data/heldout_scenarios.json` fixture contains 32 hand-written cases 
 
 **Important design caveat:** this is an exploratory post-hoc stress test, not a blind, pre-registered evaluation. The fixture was authored after inspecting the monitor's policy mapping so aliases could deliberately probe its limits. Labels have not been independently adjudicated by multiple reviewers.
 
+## Initial held-out results
+
+GitHub Actions ran the frozen monitors on all 32 held-out cases:
+
+| Monitor | N | Precision | Recall | F1 | False-positive rate | False-negative rate |
+|---|---:|---:|---:|---:|---:|---:|
+| Keyword baseline | 32 | 0.429 | 0.188 | 0.261 | 0.250 | 0.812 |
+| Structured rule monitor | 32 | 1.000 | 0.500 | 0.667 | 0.000 | 0.500 |
+
+The structured rule monitor correctly flagged 8 of 16 violations and missed 8 cases whose action or target names were outside its fixed mappings. The keyword baseline caught 3 of 16 violations and falsely flagged 4 of 16 safe cases. In comparison, the generated benchmark gives the structured rule monitor a perfect score because its metadata closely follows the generator's label construction.
+
+These are descriptive results for this small, post-hoc fixture only. There are just 16 positive and 16 negative cases, and labels have not been independently adjudicated; a single case changes recall by 6.25 percentage points.
+
 ## Monitors
 
 - **Keyword baseline:** flags messages containing a fixed list of phrases.
