@@ -5,7 +5,7 @@ import csv
 import json
 import os
 from pathlib import Path
-from src.v2_benchmark import evaluate_monitor, generate_scenarios, keyword_monitor, rule_monitor, metrics_for, scenario_to_dict
+from src.v2_benchmark import evaluate_monitor, generate_scenarios, load_heldout_scenarios, keyword_monitor, rule_monitor, metrics_for, scenario_to_dict, wilson_interval
 
 ROOT = Path(__file__).resolve().parent
 OUT = ROOT / "results" / "v2"
@@ -38,9 +38,19 @@ def metrics_for_counts(tp: int, fp: int, tn: int, fn: int, n: int) -> dict:
     f1=2*precision*recall/(precision+recall) if precision+recall else 0.0
     fpr=fp/(fp+tn) if fp+tn else 0.0
     fnr=fn/(fn+tp) if fn+tp else 0.0
-    return {"n":n,"tp":tp,"fp":fp,"tn":tn,"fn":fn,"precision":round(precision,4),
-        "recall":round(recall,4),"f1":round(f1,4),"false_positive_rate":round(fpr,4),
-        "false_negative_rate":round(fnr,4)}
+    precision_ci=wilson_interval(tp,tp+fp)
+    recall_ci=wilson_interval(tp,tp+fn)
+    fpr_ci=wilson_interval(fp,fp+tn)
+    fnr_ci=wilson_interval(fn,fn+tp)
+    return {
+        "n":n,"tp":tp,"fp":fp,"tn":tn,"fn":fn,"precision":round(precision,4),
+        "precision_ci_95_low":precision_ci[0],"precision_ci_95_high":precision_ci[1],
+        "recall":round(recall,4),"recall_ci_95_low":recall_ci[0],"recall_ci_95_high":recall_ci[1],
+        "f1":round(f1,4),"false_positive_rate":round(fpr,4),
+        "false_positive_rate_ci_95_low":fpr_ci[0],"false_positive_rate_ci_95_high":fpr_ci[1],
+        "false_negative_rate":round(fnr,4),
+        "false_negative_rate_ci_95_low":fnr_ci[0],"false_negative_rate_ci_95_high":fnr_ci[1]
+    }
 
 def main() -> None:
     parser=argparse.ArgumentParser(description=__doc__)
@@ -60,6 +70,19 @@ def main() -> None:
         for row in rows:
             row["monitor"]=name
         all_rows.extend(rows)
+
+    # Evaluate the separately authored fixture without tuning monitors on it.
+    heldout_scenarios = load_heldout_scenarios(ROOT / "data" / "heldout_scenarios.json")
+    heldout_rows = []
+    heldout_summaries = []
+    for name, monitor in {"keyword": keyword_monitor, "rule": rule_monitor}.items():
+        summary, rows = evaluate_monitor(heldout_scenarios, monitor)
+        summary["monitor"] = name
+        summary["dataset"] = "expanded_heldout_v2"
+        heldout_summaries.append(summary)
+        for row in rows:
+            row["monitor"] = name
+        heldout_rows.extend(rows)
 
     if args.with_llm:
         if not os.environ.get("OPENAI_API_KEY"):
@@ -102,17 +125,30 @@ def main() -> None:
     write_csv(OUT/"error_analysis.csv",[r for r in all_rows if r["error_type"] in ("false_positive","false_negative")])
     write_csv(OUT/"metrics_by_family.csv",subgroup_rows(all_rows,"family"))
     write_csv(OUT/"metrics_by_wording.csv",subgroup_rows(all_rows,"wording_style"))
+
+    write_csv(OUT/"heldout_predictions.csv", heldout_rows)
+    write_csv(OUT/"heldout_summary_metrics.csv", heldout_summaries)
+    write_csv(OUT/"heldout_error_analysis.csv", [r for r in heldout_rows if r["error_type"] in ("false_positive","false_negative")])
+    write_csv(OUT/"heldout_metrics_by_family.csv", subgroup_rows(heldout_rows, "family"))
+    write_csv(OUT/"heldout_metrics_by_wording.csv", subgroup_rows(heldout_rows, "wording_style"))
+    write_csv(OUT/"heldout_metrics_by_challenge_type.csv", subgroup_rows(heldout_rows, "challenge_type"))
+    write_csv(OUT/"heldout_metrics_by_severity.csv", subgroup_rows(heldout_rows, "severity"))
     with (OUT/"run_config.json").open("w",encoding="utf-8") as f:
         json.dump({"seed":args.seed,"per_family_label":args.per_family_label,"scenario_count":len(scenarios),
+            "heldout_dataset":"expanded_heldout_v2","heldout_fixture":"data/heldout_scenarios.json","heldout_scenario_count":len(heldout_scenarios),
             "llm_enabled":args.with_llm,"llm_limit":args.llm_limit if args.with_llm else 0,
             "llm_model":os.environ.get("OPENAI_MODEL") if args.with_llm else None},f,indent=2)
     try:
         from src.plot_results import make_plots
         make_plots(OUT/"summary_metrics.csv",OUT)
+        make_plots(OUT/"heldout_summary_metrics.csv",OUT,prefix="heldout_")
     except ImportError:
         print("matplotlib missing; skipped plots. Install requirements.txt.")
     print("\nSummary")
     for m in summaries:
+        print(f"{m['monitor']:>12} | n={m['n']:>4} | P={m['precision']:.3f} R={m['recall']:.3f} F1={m['f1']:.3f} FPR={m['false_positive_rate']:.3f} FNR={m['false_negative_rate']:.3f}")
+    print("\nHeld-out summary (separately authored cases)")
+    for m in heldout_summaries:
         print(f"{m['monitor']:>12} | n={m['n']:>4} | P={m['precision']:.3f} R={m['recall']:.3f} F1={m['f1']:.3f} FPR={m['false_positive_rate']:.3f} FNR={m['false_negative_rate']:.3f}")
     print(f"\nOutputs saved to {OUT.relative_to(ROOT)}/")
 

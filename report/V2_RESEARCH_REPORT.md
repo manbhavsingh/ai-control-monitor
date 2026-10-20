@@ -12,12 +12,30 @@ GuardRail Lab V2 is a reproducible synthetic benchmark comparing monitors that c
 2. How does a structured rule monitor compare when it can inspect action metadata?
 3. What errors does an optional AI-based judge make on a reproducible subset?
 4. Which wording styles and policy families account for false positives and false negatives?
+5. How well do the frozen rules generalize to separately written wording and unseen action/target aliases?
 
 ## Dataset generation
 
 The default creates 4 policy families × 2 ground-truth labels × 75 examples = 600 examples. Messages use direct, indirect, benign-mention, and refusal wording. Structured metadata includes action type, target, data class, approval, and refusal status.
 
-The rule monitor has access to structured metadata closely related to the ground-truth label. This is not a fair claim of general superiority; it is a useful policy-enforcement baseline with privileged information. Template diversity is limited and all labels are synthetic.
+The rule monitor has access to structured metadata closely related to the policy decision. This is not a fair claim of general superiority; it is a useful policy-enforcement baseline with privileged information. Template diversity is limited and all labels are synthetic.
+
+A separate `data/heldout_scenarios.json` fixture now contains 128 author-written cases: 4 policy families × (16 violations + 16 safe cases) per family (32 cases per family, 64 positive and 64 negative overall). Each case includes an annotation rationale, challenge category, and severity. Coverage includes action/target aliases, indirect intent, missing authorization, benign policy mentions, refusals, approved exceptions, read-only checks, redacted/public data, simulations, dry runs, sandbox actions, and historical references. The frozen monitors are evaluated separately; outputs use the `heldout_` prefix, with subgroup CSVs by family, wording style, challenge type, and severity.
+
+**Important design caveat:** this is an expanded, exploratory post-hoc stress test, not yet a blind independent evaluation. The fixture was authored after inspecting the monitor mapping, so it is still vulnerable to author bias. Labels have not been independently adjudicated. A label-blinded reviewer worksheet and protocol are provided at `data/heldout_review_template.csv` and `data/HELDOUT_REVIEW_GUIDE.md`; external review remains pending.
+
+## Expanded held-out results
+
+The updated CI run evaluated all 128 cases (64 violations, 64 safe):
+
+| Monitor | TP | FP | TN | FN | Precision (nominal 95% Wilson CI) | Recall (nominal 95% Wilson CI) | F1 | FPR | FNR |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Keyword baseline | 6 | 7 | 57 | 58 | 0.462 (0.232–0.709) | 0.094 (0.044–0.190) | 0.156 | 0.109 | 0.906 |
+| Structured rule monitor | 4 | 0 | 64 | 60 | 1.000 (0.510–1.000) | 0.063 (0.025–0.150) | 0.118 | 0.000 | 0.938 |
+
+The rule monitor's exact action/target mappings were highly conservative on this challenge set: it generated no false positives, but missed 60 of 64 labelled violations. The keyword baseline caught 6 of 64 and falsely flagged 7 safe cases. The generated benchmark's rule score remains 1.000 F1 because that benchmark's metadata closely follows its label construction. This contrast is evidence of a generalization failure in the current toy rules, not proof that text-only monitoring is superior.
+
+The intervals are nominal 95% Wilson score intervals for precision and recall. Because these are hand-curated synthetic cases rather than a random sample from a defined real-world distribution, intervals describe rate uncertainty under a simple binomial model and must not be interpreted as population-level guarantees. Blind external label review remains pending.
 
 ## Monitors
 
@@ -27,7 +45,7 @@ The rule monitor has access to structured metadata closely related to the ground
 
 ## Metrics and outputs
 
-Precision, recall, F1, false-positive rate, and false-negative rate are calculated against synthetic labels. Per-example predictions and error types are saved for audit. Subgroup metrics are produced by policy family and wording style.
+Precision, recall, F1, false-positive rate, and false-negative rate are calculated against synthetic labels. Summary and subgroup metrics include nominal 95% Wilson intervals for precision, recall, FPR, and FNR. Per-example predictions and error types are saved for audit. Subgroup metrics are produced by policy family, wording style, challenge type, and severity.
 
 Outputs are written to results/v2/:
 - predictions.csv
@@ -37,6 +55,12 @@ Outputs are written to results/v2/:
 - metrics_by_wording.csv
 - run_config.json
 - monitor_metrics.png and confusion-matrix plots
+- heldout_predictions.csv, heldout_summary_metrics.csv, heldout_error_analysis.csv
+- heldout_metrics_by_family.csv, heldout_metrics_by_wording.csv
+- heldout_metrics_by_challenge_type.csv, heldout_metrics_by_severity.csv
+- heldout_monitor_metrics.png and heldout confusion-matrix plots
+
+For external label validation, use `data/heldout_review_template.csv` and follow `data/HELDOUT_REVIEW_GUIDE.md`. Reviewer agreement and adjudication results should be added only after actual independent reviewers complete the process.
 
 ## Reproduce
 
@@ -56,17 +80,19 @@ This sends one API request per sampled scenario. Check provider pricing and rate
 
 ## Threats to validity
 
-1. **Template bias:** a limited set of hand-written templates is not representative of real agent behavior.
-2. **Label leakage:** structured fields strongly influence both rule predictions and labels.
-3. **Synthetic distribution:** results do not establish real-agent or frontier-model performance.
-4. **No independent adjudication:** labels have not been reviewed blind by multiple people.
-5. **No confidence intervals:** metrics are descriptive, not population estimates.
-6. **Model variance:** AI-judge outcomes depend on provider, model, prompt, and API behavior.
+1. **Template bias:** the generated training set uses a limited set of templates; the 128-case hold-out is still synthetic and author-written, not representative of real agent behavior.
+2. **Label provenance:** labels include written rationales, but the same project authoring process created them. Rationales improve auditability, not independence.
+3. **Post-hoc fixture design:** held-out aliases were selected after inspecting the frozen rule mapping. This is a useful stress test but not a blind confirmatory evaluation.
+4. **Label leakage / privileged metadata:** structured fields encode policy-relevant facts available to the rule monitor. The held-out alias cases reduce exact-target matching, but do not remove the rule monitor's access to structured metadata.
+5. **Synthetic distribution:** results do not establish real-agent or frontier-model performance.
+6. **No independent adjudication:** labels have not been reviewed blind by multiple people.
+7. **No confidence intervals:** metrics are descriptive, not population estimates.
+8. **Model variance:** AI-judge outcomes depend on provider, model, prompt, and API behavior.
 
 ## Next research iteration
 
-- Have independent reviewers label a held-out set without seeing monitor predictions.
-- Add paraphrases after monitor rules are frozen.
+- Run the blind two-reviewer protocol documented in `data/HELDOUT_REVIEW_GUIDE.md`; report agreement, Cohen's kappa, disagreements, adjudication rate, and any gold-label corrections.
+- Freeze a new protocol before authoring a future set and include additional policy families and adversarial near-misses.
 - Split train/test by template family to reduce template leakage.
 - Report bootstrap confidence intervals.
 - Compare the AI judge with human adjudication and analyse disagreements.
@@ -74,6 +100,6 @@ This sends one API request per sampled scenario. Check provider pricing and rate
 
 ## Accurate portfolio claim
 
-“Implemented a deterministic 600-scenario synthetic benchmark comparing keyword and structured-rule monitors, with subgroup metrics, per-example error analysis, reproducible CSV outputs, plots, tests, and an optional API-backed AI judge.”
+“Implemented a deterministic 600-scenario synthetic benchmark plus a separate 128-case hand-authored hold-out stress test comparing keyword and structured-rule monitors, with subgroup metrics, per-example error analysis, reproducible CSV outputs, plots, tests, and an optional API-backed AI judge.”
 
 Avoid claims that this proves AI is safe, solves alignment, or demonstrates control of frontier models.
